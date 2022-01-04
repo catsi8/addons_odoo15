@@ -263,18 +263,20 @@ class ImportAccountsale(models.TransientModel):
 		"columns>>", columns
 		text = "匯入必需包含下列欄位:";
 		text2 = text
-		if not '發票號碼' in columns:
-			text += "\n[ 發票號碼 ]"
-		if not u'銷售單' in columns:
-			text += "\n[ 銷售單 ]"
-		if not '結帳日期' in columns:
-			text += "\n[ 結帳日期 ]"
-		if not '客戶姓名' in columns:
-			text += "\n[ 客戶姓名 ]"
-		if not '金額' in columns:
-			text += "\n[ 金額 ]"
-		if not '用戶' in columns:
-			text += "\n[ 用戶 ]"
+		if not '產品編號' in columns:
+			text += "\n[ 產品編號 ]"
+		if not u'描述' in columns:
+			text += "\n[ 描述 ]"
+		if not '數量' in columns:
+			text += "\n[ 數量 ]"
+		if not '單價' in columns:
+			text += "\n[ 單價 ]"
+		if not '-%' in columns:
+			text += "\n[ -% ]"
+		if not '小計' in columns:
+			text += "\n[ 小計 ]"
+		if not '實際小計' in columns:
+			text += "\n[ 實際小計 ]"
 		if text != text2:
 			raise UserError(text)
 		return True
