@@ -78,8 +78,11 @@ class ImportAccountsale(models.TransientModel):
 		cont = 0
 		for line in archive_lines:
 			cont += 1
-			partner_id = self.find_partner(line) # 尋找客戶編號
-			# acc_sale_no = str(line.get(u'進貨單號', "")).strip()
+			acc_no = str(line.get(u'發票號碼', "")).strip()
+			partner_id = self.find_partner(line)  # 尋找客戶編號
+			acc_id = self.find_acc(acc_no, partner_id, line)
+
+
 			# acc_id = self.find_acc(acc_sale_no, partner_id, line)
 			# product_tmp_id , product_id = self.find_product(line)
 			#
@@ -177,70 +180,54 @@ class ImportAccountsale(models.TransientModel):
 	# 
 	#尋找客戶，若無則建立
 	def find_partner(self, importline):
-		user_no = str(importline.get(u'統一編號', "")).strip()
-		user_name = str(importline.get(u'廠商', "")).strip()
+		user_name = str(importline.get(u'客戶姓名', "")).strip()
 
 		res_partner = self.env['res.partner']
-		partner_search = res_partner.search([('vat', '=', user_no)], limit=1)
+		partner_search = res_partner.search([('name', '=', user_name)], limit=1)
 
 		if partner_search:
 			return partner_search
 		else:
 			partner_id = res_partner.create({
 				'company_type': 'company',
-				'vat': user_no,
 				'name': user_name,
 				})
 			return partner_id
 	# 
-	# #尋找訂單，若無則建立
-	# def find_acc(self, acc_sale_no, partner_id, importline):
-	# 	acc_move_obj = self.env['account.move']
-	# 	acc_move_line_obj = self.env['account.move.line']
-	# 	acc_search = acc_move_obj.search([('sale_no', '=', acc_sale_no)])
-	# 
-	# 	if acc_search:
-	# 		return acc_search
-	# 	else:
-	# 		p_date = str(importline.get(u'進貨日期', "")).strip().split('/')
-	# 		acc_id = acc_move_obj.create({
-	# 			'state': 'draft',
-	# 			'partner_id': partner_id.id,
-	# 			'type': 'in_invoice',
-	# 			'name': '/',
-	# 			'date': datetime.strptime(str(int(p_date[0])+1911)+'-'+p_date[1]+'-'+p_date[2], "%Y-%m-%d"),
-	# 			'invoice_date': datetime.strptime(str(int(p_date[0]) + 1911) + '-' + p_date[1] + '-' + p_date[2], "%Y-%m-%d"),
-	# 			#'user_id': self.env.user.partner_id.id,
-	# 			'company_id': self.company_id.id,
-	# 			'journal_id': self.journal_id.id,
-	# 			'sale_no': acc_sale_no,
-	# 			'sale_date': str(importline.get(u'進貨日期', "")).strip(),
-	# 			'bill_no': str(importline.get(u'發票日期', "")).strip().replace('.0',''),
-	# 			'bill_date': str(importline.get(u'發票號碼', "")).strip(),
-	# 			'invoice_payment_ref': str(importline.get(u'發票號碼', "")).strip().replace('.0',''),
-	# 			'import_memo': self.file_name,
-	# 			'invoice_origin': self.file_name,
-	# 			})
-	# 
-	# 
-	# 		return acc_id
-	# 		# sale_cost1 = float(str(importline.get(u'金流服務費', "")).strip())
-	# 		# sale_cost2 = float(str(importline.get(u'成交手續費 (單)', "")).strip())
-	# 		# sale_cost3 = float(str(importline.get(u'蝦皮信用卡活動折抵 (單)', "")).strip())
-	# 		# if sale_cost1+sale_cost2+sale_cost3 != 0:
-	# 		# 	vals = {
-	# 		# 		'order_id': sale_id.id,
-	# 		# 		'product_id': self.cost_id.id,
-	# 		# 		'product_uom_qty': 1,
-	# 		# 		'price_unit': -1 * (sale_cost1+sale_cost2+sale_cost3),
-	# 		# 		'product_uom': self.cost_id.product_tmpl_id.uom_po_id.id,
-	# 		# 		'name': self.cost_id.name
-	# 		# 	}
-	# 		# 	sale_order_line_obj.create(vals)
-	# 		#
-	# 		# sale_cost = float(str(importline.get(u'賣家折扣券折抵金額 (單)', "")).strip())
-	# 
-	# 
+	#尋找訂單，若無則建立
+	def find_acc(self, acc_no, partner_id, importline):
+		acc_move_obj = self.env['account.move']
+		acc_move_line_obj = self.env['account.move.line']
+		acc_search = acc_move_obj.search([('ref', '=', acc_no)])
+
+		if acc_search:
+			return acc_search
+		else:
+			#p_date = str(importline.get(u'進貨日期', "")).strip().split('/')
+			sale_no = str(importline.get(u'銷售單', "")).strip()
+			acc_id = acc_move_obj.create({
+				# 'state': 'draft',
+				'partner_id': partner_id.id,
+				'move_type': 'out_invoice',
+				'ref': acc_no,
+				# 'name': '/',
+				# 'date': datetime.strptime(str(int(p_date[0])+1911)+'-'+p_date[1]+'-'+p_date[2], "%Y-%m-%d"),
+				# 'invoice_date': datetime.strptime(str(int(p_date[0]) + 1911) + '-' + p_date[1] + '-' + p_date[2], "%Y-%m-%d"),
+				# #'user_id': self.env.user.partner_id.id,
+				# 'company_id': self.company_id.id,
+				# 'journal_id': self.journal_id.id,
+				# 'sale_no': acc_sale_no,
+				# 'sale_date': str(importline.get(u'進貨日期', "")).strip(),
+				# 'bill_no': str(importline.get(u'發票日期', "")).strip().replace('.0',''),
+				# 'bill_date': str(importline.get(u'發票號碼', "")).strip(),
+				# 'invoice_payment_ref': str(importline.get(u'發票號碼', "")).strip().replace('.0',''),
+				# 'import_memo': self.file_name,
+				# 'invoice_origin': self.file_name,
+				})
+			return acc_id
+
+
+
 	# #尋找蝦皮客戶訂單，若無則建立
 	# def find_shopee_user(self, saleno):
 	# 	sale_order = self.env['sale.order']
