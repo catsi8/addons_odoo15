@@ -79,6 +79,7 @@ class ImportAccountsale(models.TransientModel):
 		for line in archive_lines:
 			cont += 1
 			acc_no = str(line.get(u'發票號碼', "")).strip()
+			# acc_sale_no = str(line.get(u'銷售單', "")).strip()
 			partner_id = self.find_partner(line)  # 尋找客戶編號
 			acc_id = self.find_acc(acc_no, partner_id, line)
 
@@ -189,7 +190,7 @@ class ImportAccountsale(models.TransientModel):
 			return partner_search
 		else:
 			partner_id = res_partner.create({
-				'company_type': 'company',
+				'company_type': 'person',
 				'name': user_name,
 				})
 			return partner_id
@@ -203,16 +204,17 @@ class ImportAccountsale(models.TransientModel):
 		if acc_search:
 			return acc_search
 		else:
-			#p_date = str(importline.get(u'進貨日期', "")).strip().split('/')
-			sale_no = str(importline.get(u'銷售單', "")).strip()
+			p_date = str(importline.get(u'結帳日期', "")).strip().split('/')
+			acc_sale_no = str(importline.get(u'銷售單', "")).strip()
 			acc_id = acc_move_obj.create({
 				# 'state': 'draft',
 				'partner_id': partner_id.id,
 				'move_type': 'out_invoice',
 				'ref': acc_no,
 				# 'name': '/',
+				'payment_reference':acc_sale_no,
 				# 'date': datetime.strptime(str(int(p_date[0])+1911)+'-'+p_date[1]+'-'+p_date[2], "%Y-%m-%d"),
-				# 'invoice_date': datetime.strptime(str(int(p_date[0]) + 1911) + '-' + p_date[1] + '-' + p_date[2], "%Y-%m-%d"),
+				'invoice_date': datetime.strptime(str(int(p_date[0])) + '-' + p_date[1] + '-' + p_date[2], "%Y-%m-%d"),
 				# #'user_id': self.env.user.partner_id.id,
 				# 'company_id': self.company_id.id,
 				# 'journal_id': self.journal_id.id,
